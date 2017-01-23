@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 ifeq ($(TARGET_BOOTLOADER_BOARD_NAME),WARP7)
 LOCAL_PATH := $(call my-dir)
 
@@ -23,7 +22,7 @@ include $(CLEAR_VARS)
 LOCAL_PRELINK_MODULE := false
 LOCAL_MODULE_PATH := $(TARGET_OUT_SHARED_LIBRARIES)/hw
 LOCAL_MODULE := sensors.$(TARGET_BOOTLOADER_BOARD_NAME)
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := optional
 
 LOCAL_SRC_FILES := 						\
 				sensors.cpp 			\

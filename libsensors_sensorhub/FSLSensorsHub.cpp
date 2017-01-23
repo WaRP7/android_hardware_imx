@@ -217,7 +217,7 @@ int FSLSensorsHub::setEnable(int32_t handle, int en)
 		disable_sensor(mag);
 		disable_sensor(gyro);
 	}
-	ALOGD("FSLSensorsHub sensor waht = %d , enable = %d",what,mEnabled[what]);
+	ALOGD("FSLSensorsHub sensor what = %d , enable = %d",what,mEnabled[what]);
     return err;
 }
 

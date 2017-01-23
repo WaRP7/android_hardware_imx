@@ -28,7 +28,7 @@
 #include <cutils/properties.h>
 #include "AccelSensor.h"
 #define ACC_DATA_NAME    "FreescaleAccelerometer" 
-#define ACC_FIFO_NAME    "/dev/mma8x5x"
+#define ACC_FIFO_NAME    "/dev/FreescaleAccelerometer"
 #define ACC_SYSFS_PATH   "/sys/class/input"
 #define ACC_SYSFS_DELAY  "poll_delay"
 #define ACC_SYSFS_ENABLE "enable"
