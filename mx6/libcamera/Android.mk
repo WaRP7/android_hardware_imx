@@ -85,6 +85,10 @@ endif
 ifeq ($(PRODUCT_MODEL), SABRESD_MX7D)
     LOCAL_CPPFLAGS += -DNO_GPU
 endif
+ifeq ($(PRODUCT_MODEL), WARP7)
+    LOCAL_CPPFLAGS += -DNO_GPU
+endif
+$(warning (PRODUCT_MODEL): $(PRODUCT_MODEL))
 
 #Define this for switch the Camera through V4L2 MXC IOCTL
 #LOCAL_CPPFLAGS += -DV4L2_CAMERA_SWITCH
@@ -96,7 +100,7 @@ LOCAL_MODULE:= camera.$(TARGET_BOARD_PLATFORM)
 
 LOCAL_CFLAGS += -fno-short-enums
 LOCAL_PRELINK_MODULE := false
-LOCAL_MODULE_TAGS := eng
+LOCAL_MODULE_TAGS := optional
 
 include $(BUILD_SHARED_LIBRARY)
 endif

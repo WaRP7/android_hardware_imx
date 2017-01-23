@@ -226,6 +226,11 @@ bool DisplayAdapter::requestFrameBuffer()
 void DisplayAdapter::handleCameraFrame(CameraFrame *frame)
 {
     if (!frame || !frame->mBufHandle) {
+        if (!frame)
+            FLOGI("DisplayAdapter: (!frame)");
+        else
+            FLOGI("DisplayAdapter: (!frame->mBufHandle)");
+
         FLOGI("DisplayAdapter: notifyCameraFrame receive null frame");
         return;
     }
@@ -234,6 +239,16 @@ void DisplayAdapter::handleCameraFrame(CameraFrame *frame)
     frame->addReference();
     if (mDisplayState == DisplayAdapter::DISPLAY_STARTED) {
         Mutex::Autolock lock(mLock);
+
+#if 1 //az add
+        GraphicBufferMapper& mapper = GraphicBufferMapper::get();
+
+        // unlock buffer before sending to display
+        mapper.unlock(*frame->mBufHandle);
+
+        private_handle_t *handle = (private_handle_t *)(*frame->mBufHandle);
+        memcpy((void*)handle->base, frame->mVirtAddr, frame->mSize);//az
+#endif
 
         renderBuffer(frame->mBufHandle);
     }

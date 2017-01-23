@@ -164,6 +164,8 @@ protected:
 
     PixelFormat mPicturePixelFormat;
     PixelFormat mPreviewPixelFormat;
+
+    MemmapBuf mMapedBuf[MAX_PREVIEW_BUFFER]; //az added
 };
 
 #endif // ifndef _DEVICE_ADAPTER_H_

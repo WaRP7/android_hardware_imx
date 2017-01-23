@@ -73,8 +73,8 @@ using namespace android;
 #define VADC_TVIN_NAME "mx6s-csi"
 #define V4LSTREAM_WAKE_LOCK "V4LCapture"
 
-#define MAX_PREVIEW_BUFFER      6
-#define MAX_CAPTURE_BUFFER      3
+#define MAX_PREVIEW_BUFFER      3//6 az
+#define MAX_CAPTURE_BUFFER      2//3 az
 #define DISPLAY_WAIT_TIMEOUT    5000
 #define CAMAERA_FILENAME_LENGTH 256
 #define CAMERA_SENSOR_LENGTH    92

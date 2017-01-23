@@ -543,8 +543,7 @@ bool CameraBridge::bridgeThread()
 
         case BridgeThread::BRIDGE_FRAME:
 
-            // FLOGI("BridgeThread received BRIDGE_FRAME command from Camera
-            // HAL");
+            // FLOGI("BridgeThread received BRIDGE_FRAME command from Camera HAL");
             if (mBridgeState == CameraBridge::BRIDGE_INIT) {
                 break;
             }
@@ -617,6 +616,9 @@ bool CameraBridge::processFrame(CameraFrame *frame)
         return false;
     }
 
+    FLOGE("CameraBridge: frame->mFrameType: %d", frame->mFrameType);
+    FLOGE("CameraBridge: mMsgEnabled: %x", mMsgEnabled);
+
     if ((frame->mFrameType & CameraFrame::IMAGE_FRAME)) {
         if ((mMsgEnabled & CAMERA_MSG_RAW_IMAGE) && (NULL != mDataCb)) {
             sendRawImageFrame(frame);
@@ -654,6 +656,26 @@ bool CameraBridge::processImageFrame(CameraFrame *frame)
     int thumbWidth, thumbHeight;
     JpegParams *mainJpeg = NULL, *thumbJpeg = NULL;
     void *rawBuf         = NULL, *thumbBuf = NULL;
+
+#if 0 //az dump
+    FILE *pf = NULL;
+    static int count =0;
+    const char* filepath="/data/data/com.android.camera/files/jpeg.dump";
+    char filename[128];
+    memset(filename, 0, sizeof(filename));
+    sprintf(filename, "%s%d", filepath, count++);
+    if (pf == NULL) 
+        pf = fopen(filename, "wb+"); //wb
+
+    if (pf == NULL) {
+        FLOGI("open %s failed: %s", filename, strerror(errno));
+    } else {
+        FLOGI("-----write-----%s", filename );
+        fwrite((uint8_t *)frame->mVirtAddr, 640*480*2, 1, pf);
+        fclose(pf);
+    }
+
+#endif
 
     camera_memory_t *rawFrame = mRequestMemory(-1, frame->mSize, 1, NULL);
     if (!rawFrame || !rawFrame->data) {
@@ -721,7 +743,7 @@ bool CameraBridge::processImageFrame(CameraFrame *frame)
                 FLOGE("Error: format not supported int ion alloc");
                 return false;
         }
-        thumbSize = frame->mSize;
+        //thumbSize = frame->mSize; //az rm it
         thumbJpeg =
             new JpegParams((uint8_t *)frame->mVirtAddr,
                            frame->mSize,
@@ -779,6 +801,7 @@ bool CameraBridge::processImageFrame(CameraFrame *frame)
 
 void CameraBridge::sendRawImageFrame(CameraFrame *frame)
 {
+    FLOGE("CameraBridge: sendRawImageFrame");
     FSL_ASSERT(frame);
     camera_memory_t *RawMemBase = NULL;
     RawMemBase = mRequestMemory(-1, frame->mSize, 1, NULL);

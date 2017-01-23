@@ -24,7 +24,7 @@ CameraHal::CameraHal(int cameraId)
     : mPowerLock(false), mCameraId(cameraId), mPreviewEnabled(false),
       mRecordingEnabled(false), mTakePictureInProcess(false),
       mSetPreviewWindowCalled(false),
-      mPreviewStartInProgress(false), mMsgEnabled(0), mUseIon(true)
+      mPreviewStartInProgress(false), mMsgEnabled(0), mUseIon(false) //az true->false 
 {
     if (mUseIon) {
         mPhysAdapter = new PhysMemAdapter();

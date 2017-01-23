@@ -30,6 +30,7 @@ status_t Ov5640::initParameters(CameraParameters& params,
                                   int              *supportPictureFormat,
                                   int               pfmtLen)
 {
+    FLOGE("Ov5640: initParameters");
     if (mCameraHandle < 0) {
         FLOGE("OvDevice: initParameters sensor has not been opened");
         return BAD_VALUE;
@@ -43,7 +44,7 @@ status_t Ov5640::initParameters(CameraParameters& params,
     // first read sensor format.
     int ret = 0, index = 0;
     int sensorFormat[MAX_SENSOR_FORMAT];
-#if 0
+#if 1 //az open it
     struct v4l2_fmtdesc vid_fmtdesc;
     while (ret == 0) {
         vid_fmtdesc.index = index;
@@ -61,7 +62,8 @@ status_t Ov5640::initParameters(CameraParameters& params,
 #endif // if 0
 
     // v4l2 does not support enum format, now hard code here.
-	sensorFormat[0] = v4l2_fourcc('Y', 'U', 'Y', 'V');
+	sensorFormat[0] = v4l2_fourcc('Y', 'U', 'Y', 'V');//az
+	//sensorFormat[0] = v4l2_fourcc('N', 'V', '1', '2');
     index           = 1;
 
     // second check match sensor format with vpu support format and picture

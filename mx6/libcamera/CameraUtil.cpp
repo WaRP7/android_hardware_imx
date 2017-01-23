@@ -39,6 +39,7 @@ int convertPixelFormatToV4L2Format(PixelFormat format)
             break;
     }
     FLOGI("pixel format: 0x%x", nFormat);
+    FLOGI("V4L2: az: pixel format: 0x%x", nFormat);
     return nFormat;
 }
 
@@ -68,6 +69,7 @@ PixelFormat convertV4L2FormatToPixelFormat(unsigned int format)
             break;
     }
     FLOGI("pixel format: 0x%x", nFormat);
+    FLOGI("HAL_PIXEL_FORMAT: az: pixel format: 0x%x", nFormat);
     return nFormat;
 }
 

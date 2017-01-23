@@ -126,6 +126,7 @@ status_t OvDevice::initParameters(CameraParameters& params,
                                   int              *supportPictureFormat,
                                   int               pfmtLen)
 {
+    FLOGE("OvDevice: initParameters sensor");
     if (mCameraHandle < 0) {
         FLOGE("OvDevice: initParameters sensor has not been opened");
         return BAD_VALUE;
@@ -139,7 +140,7 @@ status_t OvDevice::initParameters(CameraParameters& params,
     // first read sensor format.
     int ret = 0, index = 0;
     int sensorFormat[MAX_SENSOR_FORMAT];
-#if 0
+#if 1 //az opened it
     struct v4l2_fmtdesc vid_fmtdesc;
     while (ret == 0) {
         vid_fmtdesc.index = index;

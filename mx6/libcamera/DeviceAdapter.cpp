@@ -231,6 +231,7 @@ status_t DeviceAdapter::setDeviceConfig(int         width,
     if (ret < 0) {
         FLOGE("Open: VIDIOC_S_FMT Failed: %s", strerror(errno));
         return ret;
+        //return 0; //az
     }
 
     return ret;
@@ -257,7 +258,7 @@ status_t DeviceAdapter::registerCameraFrames(CameraFrame *pBuffer,
     }
 
     mVideoInfo->rb.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    mVideoInfo->rb.memory = V4L2_MEMORY_USERPTR;
+    mVideoInfo->rb.memory = V4L2_MEMORY_MMAP; //az
     mVideoInfo->rb.count  = num;
 
     ret = ioctl(mCameraHandle, VIDIOC_REQBUFS, &mVideoInfo->rb);
@@ -268,19 +269,37 @@ status_t DeviceAdapter::registerCameraFrames(CameraFrame *pBuffer,
 
     for (int i = 0; i < num; i++) {
         CameraFrame *buffer = pBuffer + i;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+//#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#if 1 //az open it
         memset(&mVideoInfo->buf, 0, sizeof(struct v4l2_buffer));
         mVideoInfo->buf.index    = i;
         mVideoInfo->buf.type     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        mVideoInfo->buf.memory   = V4L2_MEMORY_USERPTR;
-        mVideoInfo->buf.m.offset = buffer->mPhyAddr;
-        mVideoInfo->buf.length   = buffer->mSize;
+        mVideoInfo->buf.memory   = V4L2_MEMORY_MMAP; //az
+        mVideoInfo->buf.m.offset = buffer->mPhyAddr; //maybe can rm
+        mVideoInfo->buf.length   = buffer->mSize;    //maybe cam rm
 
         ret = ioctl(mCameraHandle, VIDIOC_QUERYBUF, &mVideoInfo->buf);
         if (ret < 0) {
             FLOGE("Unable to query buffer (%s)", strerror(errno));
             return ret;
         }
+#if 1 //az add it
+		mMapedBuf[i].length = mVideoInfo->buf.length;
+		mMapedBuf[i].offset = (size_t)mVideoInfo->buf.m.offset;
+		mMapedBuf[i].start = (unsigned char*)mmap(NULL, mMapedBuf[i].length,
+				 PROT_READ | PROT_WRITE, MAP_SHARED,
+				 mCameraHandle, mMapedBuf[i].offset);
+
+		FLOGI("maped idx %d, len %d, phy 0x%x, vir %p",
+		i, mMapedBuf[i].length, mMapedBuf[i].offset, mMapedBuf[i].start);
+#if 1
+        FLOGE("buffer->mVirtAddr:%p", buffer->mVirtAddr);
+        FLOGE("mMapedBuf[i].start:%p", mMapedBuf[i].start);
+        buffer->mVirtAddr = mMapedBuf[i].start;  //az just
+        FLOGE("after =: buffer->mVirtAddr:%p", buffer->mVirtAddr);
+#endif
+
+#endif
 #endif
         // Associate each Camera buffer
         buffer->setObserver(this);
@@ -309,9 +328,10 @@ status_t DeviceAdapter::fillCameraFrame(CameraFrame *frame)
     struct v4l2_buffer cfilledbuffer;
     memset(&cfilledbuffer, 0, sizeof (struct v4l2_buffer));
     cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
+    cfilledbuffer.memory = V4L2_MEMORY_MMAP;
     cfilledbuffer.index    = i;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+//#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#if 1 //az
     cfilledbuffer.m.offset = frame->mPhyAddr;
 #else
     cfilledbuffer.m.userptr = (unsigned int)frame->mVirtAddr;
@@ -338,11 +358,13 @@ status_t DeviceAdapter::startDeviceLocked()
     FSL_ASSERT(queueableBufs > 0);
 
     for (int i = 0; i < queueableBufs; i++) {
+        FLOGE("DeviceAdapter  az: going to queue #%d of #%d by ioctl VIDIOC_QBUF", i, queueableBufs);
         CameraFrame *frame = (CameraFrame *)mPreviewBufs.keyAt(i);
         mVideoInfo->buf.index    = i;
         mVideoInfo->buf.type     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        mVideoInfo->buf.memory   = V4L2_MEMORY_USERPTR;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+        mVideoInfo->buf.memory   = V4L2_MEMORY_MMAP; //az
+//#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+#if 1 //az
         mVideoInfo->buf.m.offset = frame->mPhyAddr;
 #else
         mVideoInfo->buf.m.userptr = (unsigned int)frame->mVirtAddr;
@@ -364,6 +386,7 @@ status_t DeviceAdapter::startDeviceLocked()
         ret = ioctl(mCameraHandle, VIDIOC_STREAMON, &bufType);
         if (ret < 0) {
             FLOGE("VIDIOC_STREAMON failed: %s", strerror(errno));
+            FLOGE("VIDIOC_STREAMON failed: %d", (errno));
             return ret;
         }
 
@@ -380,6 +403,7 @@ status_t DeviceAdapter::stopDeviceLocked()
 {
     status_t ret = NO_ERROR;
     enum v4l2_buf_type bufType;
+    FLOGI("DeviceAdapter::stopDeviceLocked");
 
     mDeviceThread->requestExitAndWait();
     mDeviceThread.clear();
@@ -387,6 +411,7 @@ status_t DeviceAdapter::stopDeviceLocked()
     if (mVideoInfo->isStreamOn) {
         bufType = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
+        FLOGI("DeviceAdapter::stopDeviceLocked:ioctl(VIDIOC_STREAMOFF)");
         ret = ioctl(mCameraHandle, VIDIOC_STREAMOFF, &bufType);
         if (ret < 0) {
             FLOGE("StopStreaming: Unable to stop capture: %s", strerror(errno));
@@ -399,6 +424,15 @@ status_t DeviceAdapter::stopDeviceLocked()
     mQueued   = 0;
     mDequeued = 0;
     mPreviewBufs.clear();
+
+#if 1//az add it
+	for (int i = 0; i < mPreviewBufferCount; i++) {
+        if (mMapedBuf[i].start!= NULL && mMapedBuf[i].length > 0) {
+            munmap(mMapedBuf[i].start, mMapedBuf[i].length);
+        }
+    }
+    memset(mMapedBuf, 0, sizeof(mMapedBuf));
+#endif
 
     return ret;
 }
@@ -477,7 +511,7 @@ CameraFrame * DeviceAdapter::acquireCameraFrame()
     struct v4l2_buffer cfilledbuffer;
     memset(&cfilledbuffer, 0, sizeof (cfilledbuffer));
     cfilledbuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    cfilledbuffer.memory = V4L2_MEMORY_USERPTR;
+    cfilledbuffer.memory = V4L2_MEMORY_MMAP; //az
 
     /* DQ */
     ret = ioctl(mCameraHandle, VIDIOC_DQBUF, &cfilledbuffer);
@@ -486,7 +520,22 @@ CameraFrame * DeviceAdapter::acquireCameraFrame()
         return NULL;
     }
     mDequeued++;
+#if 0 //az dump
+    static FILE *pf = NULL;
+    const char* filepath="/data/data/com.android.camera/files/camera.yuv";
+    if (pf == NULL) 
+        pf = fopen(filepath, "ab+"); //wb
 
+    if (pf == NULL) {
+        FLOGI("open %s failed: %s", filepath, strerror(errno));
+    }
+    else {
+        FLOGI("-----write-----" );
+        fwrite(mMapedBuf[cfilledbuffer.index].start, 640*480*2, 1, pf);
+        //fclose(pf);
+    }
+
+#endif
     int index = cfilledbuffer.index;
     FSL_ASSERT(!mPreviewBufs.isEmpty(), "mPreviewBufs is empty");
     return (CameraFrame *)mPreviewBufs.keyAt(index);

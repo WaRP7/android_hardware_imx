@@ -26,14 +26,123 @@ typedef struct tRGB{
 
 static RGB yuvTorgb(unsigned char Y, unsigned char U, unsigned char V){
     RGB rgb;
+#if 0
     rgb.r = (int)((Y&0xff) + 1.4075 * ((V&0xff)-128));
     rgb.g = (int)((Y&0xff) - 0.3455 * ((U&0xff)-128) - 0.7169*((V&0xff)-128));
     rgb.b = (int)((Y&0xff) + 1.779 * ((U&0xff)-128));
 
+#else
+        rgb.r = (unsigned char)(Y + (U - 128) + ((104*(U - 128))>>8));  
+        rgb.g = (unsigned char)(Y - (89*(V - 128)>>8) - ((183*(U - 128))>>8));  
+        rgb.b = (unsigned char)(Y + (V - 128) + ((199*(V - 128))>>8));  
+#endif
     return rgb;
 }
 
+    //输入YUV422I buffer数据，输出RGB buffer数据；  
+static int UYVY422ToRGB888(unsigned char *src_buffer, int w, int h, unsigned char *des_buffer)  
+{  
+    unsigned char *yuv, *rgb;  
+    unsigned char u, v, y1, y2;  
 
+    yuv = src_buffer;  
+    rgb = des_buffer;  
+
+    if (yuv == NULL || rgb == NULL)  
+    {  
+        printf ("error: input data null!\n");     
+        return -1;  
+    }  
+
+    int size = w * h;  
+
+    for(int i = 0; i < size; i += 2)  
+    {  
+        y1 = yuv[2*i + 1];  
+        y2 = yuv[2*i + 3];  
+        u = yuv[2*i];  
+        v = yuv[2*i + 2];  
+
+#if 0  
+        rgb[3*i]     = (unsigned char)(y1 + 1.402*(u - 128));  
+        rgb[3*i + 1] = (unsigned char)(y1 - 0.344*(u - 128) - 0.714*(v - 128));  
+        rgb[3*i + 2] = (unsigned char)(y1 + 1.772*(v - 128));  
+
+        rgb[3*i + 3] = (unsigned char)(y2 + 1.375*(u - 128));  
+        rgb[3*i + 4] = (unsigned char)(y2 - 0.344*(u - 128) - 0.714*(v - 128));  
+        rgb[3*i + 5] = (unsigned char)(y2 + 1.772*(v - 128));  
+#endif   
+
+        //为提高性能此处用移位运算；  
+        rgb[3*i]     = (unsigned char)(y1 + (u - 128) + ((104*(u - 128))>>8));  
+        rgb[3*i + 1] = (unsigned char)(y1 - (89*(v - 128)>>8) - ((183*(u - 128))>>8));  
+        rgb[3*i + 2] = (unsigned char)(y1 + (v - 128) + ((199*(v - 128))>>8));  
+
+        rgb[3*i + 3] = (unsigned char)(y2 + (u - 128) + ((104*(u - 128))>>8));  
+        rgb[3*i + 4] = (unsigned char)(y2 - (89*(v - 128)>>8) - ((183*(u - 128))>>8));  
+        rgb[3*i + 5] = (unsigned char)(y2 + (v - 128) + ((199*(v - 128))>>8));  
+    }  
+
+    return 0;  
+}  
+
+//
+//yuv422p
+int convertyuv422torgb565(unsigned char *inbuf,unsigned char *outbuf,int width,int height)
+{
+  int rows,cols,rowwidth;
+  int y,u,v,r,g,b,rdif,invgdif,bdif;
+  int size;
+  unsigned char *YUVdata,*RGBdata;
+  int YPOS,UPOS,VPOS;
+
+  YUVdata = inbuf;
+  RGBdata = outbuf;
+
+  rowwidth = width>>1;
+  size=width*height*2;
+  YPOS=0;
+  UPOS=YPOS + size/2;
+  VPOS=UPOS + size/4;
+
+  for(rows=0;rows<height;rows++)
+  {
+    for(cols=0;cols<width;cols++) 
+    {
+ u = YUVdata[UPOS] - 128;
+ v = YUVdata[VPOS] - 128;
+
+ rdif = v + ((v * 103) >> 8);
+ invgdif = ((u * 88) >> 8) +((v * 183) >> 8);
+ bdif = u +( (u*198) >> 8);
+
+ r = YUVdata[YPOS] + rdif;
+ g = YUVdata[YPOS] - invgdif;
+ b = YUVdata[YPOS] + bdif;
+ r=r>255?255:(r<0?0:r);
+ g=g>255?255:(g<0?0:g);
+ b=b>255?255:(b<0?0:b);
+    
+ *(RGBdata++) =( ((g & 0x1C) << 3) | ( b >> 3) );
+ *(RGBdata++) =( (r & 0xF8) | ( g >> 5) );
+
+ YPOS++;      
+ 
+ if(cols & 0x01)
+ {
+    UPOS++;
+    VPOS++;      
+ } 
+    }
+    if((rows & 0x01)== 0)
+    {
+ UPOS -= rowwidth;
+ VPOS -= rowwidth;
+    }
+  }
+  return 1;
+}
+//az: this function is for YUYV422 to RGB888
 static void YUY2ToRGB(unsigned char *src, unsigned char *dst, int width, int height){
 	int i;
 	int j;
@@ -63,7 +172,65 @@ static void YUY2ToRGB(unsigned char *src, unsigned char *dst, int width, int hei
     return;
 }
 
+static void YUY2ToRGB565(unsigned char *src, unsigned char *dst, int width, int height){
+	int i;
+	int j;
+    int numOfPixel = width * height;
+    unsigned char *rgb = dst;
+    int lineWidth = 2*width;
 
+    for(i=0; i<height; i++){
+        int startY = i*lineWidth;
+        for(j = 0; j < lineWidth; j+=4){
+            int Y1 = j + startY;
+            int Y2 = Y1+2;
+            int U = Y1+1;
+            int V = Y1+3;
+            int index = (Y1>>1)*2;
+            RGB tmp = yuvTorgb(src[Y1], src[U], src[V]);
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
+            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+            index += 2;
+            tmp = yuvTorgb(src[Y2], src[U], src[V]);
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
+            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+        }
+    }
+    return;
+}
+
+static void UYVYToRGB565(unsigned char *src, unsigned char *dst, int width, int height){
+	int i;
+	int j;
+    int numOfPixel = width * height;
+    unsigned char *rgb = dst;
+    int lineWidth = 2*width;
+
+    for(i=0; i<height; i++){
+        int startY = i*lineWidth;
+        for(j = 0; j < lineWidth; j+=4){
+            int U  = j + startY;
+            int Y1 = U +1;
+            int V  = U +2;
+            int Y2 = U +3;
+            int index = (U>>1)*2;
+
+            RGB tmp = yuvTorgb(src[Y1], src[U], src[V]);
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
+            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+            index += 2;
+            tmp = yuvTorgb(src[Y2], src[U], src[V]);
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
+            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+        }
+    }
+    return;
+}
+
+static void dumpToFile(int fd, unsigned char* buf, int width, int height) 
+{
+    write(fd, buf, width*height);
+}
 
 SurfaceAdapter::SurfaceAdapter()
     : mNativeWindow(NULL), mFrameWidth(0), mFrameHeight(0),
@@ -122,6 +289,8 @@ int SurfaceAdapter::setNativeWindowAttribute(int width,
 
     // Set window geometry
     ALOGI("set_buffers_geometry, w %d, h %d, format 0x%x", width, height, format);
+    format = HAL_PIXEL_FORMAT_RGB_565;//az
+    ALOGI("az set NativeWindow HAL_PIXEL_FORMAT_RGB_565: set_buffers_geometry, w %d, h %d, format 0x%x", width, height, format);
     err = mNativeWindow->set_buffers_geometry(mNativeWindow,
                                               width, height, format);
 
@@ -203,6 +372,8 @@ int SurfaceAdapter::allocateBuffer(int width,
     GraphicBufferMapper& mapper = GraphicBufferMapper::get();
     Rect bounds;
 
+    FLOG_RUNTIME("SurfaceAdapter::allocateBuffer:width, height, format, numBufs, maxQCount %d %d %d %d %d", width, height, format, numBufs, maxQCount);
+
     if ((NULL == mNativeWindow) || (numBufs == 0)) {
         FLOGE("allocateBuffer invalid parameters");
         return BAD_VALUE;
@@ -273,7 +444,7 @@ int SurfaceAdapter::allocateBuffer(int width,
     ALOGI("SurfaceAdapter::allocateBuffer, mBufferSize %d", mBufferSize);
 
 #ifdef NO_GPU
-    mTmpBuf = (unsigned char*)malloc(mBufferSize);
+    mTmpBuf = (unsigned char*)malloc(mBufferSize); //az add *3/2
     if(mTmpBuf == NULL) {
         ALOGE("malloc mTmpBuf failed, bytes %d", mBufferSize);
         goto fail;
@@ -307,6 +478,8 @@ fail:
 int SurfaceAdapter::freeBuffer()
 {
     status_t ret = NO_ERROR;
+
+    FLOG_RUNTIME("SurfaceAdapter::freeBuffer()");
 
     GraphicBufferMapper& mapper = GraphicBufferMapper::get();
 
@@ -389,10 +562,68 @@ void SurfaceAdapter::renderBuffer(buffer_handle_t *bufHandle)
     // unlock buffer before sending to display
     mapper.unlock(*bufHandle);
 
-#ifdef NO_GPU
     private_handle_t *handle = (private_handle_t *)(*bufHandle);
+#if 0 //az dump YUV buffers to file
+#if 0
+    static int fd = -1;
+    if (fd<0) {
+        fd = open("/sdcard/camera.yuv", O_RDWR);
+        if (!(fd>0))
+            FLOGE("open file for dump ERROR: %d", fd);
+    }
+    if (fd>0)
+        dumpToFile(fd, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
+#else
+        static FILE *pf = NULL;
+        const char* filepath="/data/data/com.android.camera/files/surface.yuv";
+        if (pf == NULL) 
+            pf = fopen(filepath, "ab+"); //wb
+
+        if (pf == NULL) {
+            FLOGI("open %s failed: %s", filepath, strerror(errno));
+        }
+        else {
+            FLOGI("-----write----- %d: ", mBufferSize);
+            FLOGE("%s handle->base:%p",__func__,  handle->base );
+            fwrite((unsigned char *)handle->base, mFrameWidth*mFrameHeight*2, 1, pf); //dump virtual add 
+            FLOGE("%s handle->phys:%p",__func__,  handle->phys);
+            FLOGE("%s handle->phys:%x",__func__,  handle->phys);
+            //fwrite((unsigned char *)handle->phys, mFrameWidth*mFrameHeight*2, 1, pf);
+            //fclose(pf);
+        }
+#endif
+#endif
+
+//#ifdef NO_GPU
+#if 0 //az
+    //private_handle_t *handle = (private_handle_t *)(*bufHandle);
     memcpy(mTmpBuf, (void *)handle->base, mBufferSize);
     YUY2ToRGB(mTmpBuf, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
+    FLOGE("%s handle->base:%p",__func__,  handle->base );
+#endif
+
+#if 1 //az
+    //private_handle_t *handle = (private_handle_t *)(*bufHandle);
+    memcpy(mTmpBuf, (void *)handle->base, mBufferSize);
+    YUY2ToRGB565(mTmpBuf, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
+    //UYVYToRGB565(mTmpBuf, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
+    //FLOGE("%s handle->base:%p",__func__,  handle->base );
+#endif
+
+#if 0//dump rgb frames to file
+        static FILE *pf1 = NULL;
+        const char* filepath1="/data/data/com.android.camera/files/camera.rgb";
+        if (pf1 == NULL) 
+            pf1 = fopen(filepath1, "ab+"); //wb
+
+        if (pf1 == NULL) {
+            FLOGI("open %s failed: %s", filepath1, strerror(errno));
+        }
+        else {
+            FLOGI("-----write-----");
+            fwrite((unsigned char *)handle->base, mBufferSize/*mFrameWidth*mFrameHeight*3*/, 1, pf1);
+            //fclose(pf1);
+        }
 #endif
 
     ret = mNativeWindow->enqueue_buffer(mNativeWindow, bufHandle);
