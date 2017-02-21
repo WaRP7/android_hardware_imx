@@ -81,7 +81,7 @@ int camera_set_preview_window(struct camera_device      *device,
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -102,7 +102,7 @@ void camera_set_callbacks(struct camera_device          *device,
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -121,7 +121,7 @@ void camera_enable_msg_type(struct camera_device *device,
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -136,7 +136,7 @@ void camera_disable_msg_type(struct camera_device *device,
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -151,7 +151,7 @@ int camera_msg_type_enabled(struct camera_device *device,
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return 0;
@@ -166,7 +166,7 @@ int camera_start_preview(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -182,7 +182,7 @@ void camera_stop_preview(struct camera_device *device)
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -197,7 +197,7 @@ int camera_preview_enabled(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -214,7 +214,7 @@ int camera_store_meta_data_in_buffers(struct camera_device *device,
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -233,7 +233,7 @@ int camera_start_recording(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -248,7 +248,7 @@ void camera_stop_recording(struct camera_device *device)
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -263,7 +263,7 @@ int camera_recording_enabled(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -279,7 +279,7 @@ void camera_release_recording_frame(struct camera_device *device,
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -294,7 +294,7 @@ int camera_auto_focus(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -310,7 +310,7 @@ int camera_cancel_auto_focus(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -326,7 +326,7 @@ int camera_take_picture(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -342,7 +342,7 @@ int camera_cancel_picture(struct camera_device *device)
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -359,7 +359,8 @@ int camera_set_parameters(struct camera_device *device,
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
+    FLOGI("camera_set_parameters: params is: %s", params);
 
     if (!device)
         return rv;
@@ -375,7 +376,7 @@ char* camera_get_parameters(struct camera_device *device)
     char *param                  = NULL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return NULL;
@@ -392,7 +393,7 @@ static void camera_put_parameters(struct camera_device *device,
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -410,7 +411,7 @@ int camera_send_command(struct camera_device *device,
     int rv                       = -EINVAL;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return rv;
@@ -425,7 +426,7 @@ void camera_release(struct camera_device *device)
 {
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     if (!device)
         return;
@@ -457,7 +458,7 @@ int             camera_device_close(hw_device_t *device)
     int ret                      = 0;
     fsl_camera_device_t *fsl_dev = NULL;
 
-    ALOGV("%s", __FUNCTION__);
+    FLOGI("%s", __FUNCTION__);
 
     android::Mutex::Autolock lock(gCameraHalDeviceLock);
 

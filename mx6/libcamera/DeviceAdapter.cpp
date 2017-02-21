@@ -521,6 +521,7 @@ CameraFrame * DeviceAdapter::acquireCameraFrame()
     }
     mDequeued++;
 #if 0 //az dump
+    FLOGI("az :%s:%d ", __func__, __LINE__);
     static FILE *pf = NULL;
     const char* filepath="/data/data/com.android.camera/files/camera.yuv";
     if (pf == NULL) 
@@ -534,6 +535,7 @@ CameraFrame * DeviceAdapter::acquireCameraFrame()
         fwrite(mMapedBuf[cfilledbuffer.index].start, 640*480*2, 1, pf);
         //fclose(pf);
     }
+    FLOGI("az :%s:%d ", __func__, __LINE__);
 
 #endif
     int index = cfilledbuffer.index;

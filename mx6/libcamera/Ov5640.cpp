@@ -236,6 +236,8 @@ status_t Ov5640::setParameters(CameraParameters& params)
     params.getPreviewSize(&w, &h);
     sprintf(tmp, "%dx%d", w, h);
     FLOGI("Set preview size: %s", tmp);
+    FLOGI("OV5640: Set preview size: %s", tmp);
+    FLOGI("OV5640: mSupportedPreviewSizes: %s", mSupportedPreviewSizes);
     if (strstr(mSupportedPreviewSizes, tmp) == NULL) {
         FLOGE("The preview size w %d, h %d is not corrected", w, h);
         return BAD_VALUE;
@@ -244,6 +246,7 @@ status_t Ov5640::setParameters(CameraParameters& params)
     params.getPictureSize(&w, &h);
     sprintf(tmp, "%dx%d", w, h);
     FLOGI("Set picture size: %s", tmp);
+    FLOGI("OV5640: Set picture size: %s", tmp);
     if (strstr(mSupportedPictureSizes, tmp) == NULL) {
         FLOGE("The picture size w %d, h %d is not corrected", w, h);
         return BAD_VALUE;

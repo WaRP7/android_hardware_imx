@@ -145,7 +145,7 @@ void CameraFrame::initialize(buffer_handle_t *buf_h,
     mFrameType = INVALID_FRAME;
     mIndex     = index;
 
-#ifdef NO_GPU
+#ifdef NO_GPU_BACKUP_BUF_ENABLE
     mBackupVirtAddr = malloc(mSize);
 #endif
 }
@@ -198,7 +198,7 @@ void CameraFrame::reset()
     mBufState  = BUFS_CREATE;
     mFrameType = INVALID_FRAME;
 
-#ifdef NO_GPU
+#ifdef NO_GPU_BACKUP_BUF_ENABLE
     if(mBackupVirtAddr) {
         free(mBackupVirtAddr);
         mBackupVirtAddr = NULL;
@@ -206,7 +206,7 @@ void CameraFrame::reset()
 #endif
 }
 
-#ifdef NO_GPU
+#ifdef NO_GPU_BACKUP_BUF_ENABLE
 void CameraFrame::backupYUYV()
 {
     memcpy(mBackupVirtAddr, mVirtAddr, mSize);
@@ -334,7 +334,7 @@ void CameraFrameProvider::dispatchCameraFrame(CameraFrame *frame)
     CameraFrameListener *listener;
     size_t nSize = mFrameListeners.size();
 
-#ifdef NO_GPU
+#ifdef NO_GPU_BACKUP_BUF_ENABLE
     //mVirtAddr hold YUYV, need csc to RGB888 to display.
     //So need back the YUVY data for encoder.
     for (size_t i = 0; i < nSize; i++) {

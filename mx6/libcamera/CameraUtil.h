@@ -183,7 +183,7 @@ public:
     void addReference();
     void setObserver(CameraFrameObserver *observer);
     void reset();
-#ifdef NO_GPU
+#ifdef NO_GPU_BACKUP_BUF_ENABLE
     void backupYUYV();
 #endif
 private:
@@ -200,7 +200,7 @@ public:
     int mFormat;
     FrameType mFrameType;
     int mIndex;
-#ifdef NO_GPU
+#ifdef NO_GPU_BACKUP_BUF_ENABLE
     void *mBackupVirtAddr;
 #endif
 

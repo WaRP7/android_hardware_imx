@@ -616,8 +616,8 @@ bool CameraBridge::processFrame(CameraFrame *frame)
         return false;
     }
 
-    FLOGE("CameraBridge: frame->mFrameType: %d", frame->mFrameType);
-    FLOGE("CameraBridge: mMsgEnabled: %x", mMsgEnabled);
+    //FLOGE("CameraBridge: frame->mFrameType: %d", frame->mFrameType);
+    //FLOGE("CameraBridge: mMsgEnabled: %x", mMsgEnabled);
 
     if ((frame->mFrameType & CameraFrame::IMAGE_FRAME)) {
         if ((mMsgEnabled & CAMERA_MSG_RAW_IMAGE) && (NULL != mDataCb)) {
@@ -861,7 +861,7 @@ void CameraBridge::sendVideoFrame(CameraFrame *frame)
         pMetaBuf->length    = frame->mSize;
     }
     else {
-#ifdef NO_GPU //mVirtAddr will csc to rgb888, so use mBackupVirtAddr
+#ifdef NO_GPU_BACKUP_BUF_ENABLE //mVirtAddr will csc to rgb888, so use mBackupVirtAddr
         uint8_t *srcBuf = (uint8_t *)frame->mBackupVirtAddr;
 #else
         uint8_t *srcBuf = (uint8_t *)frame->mVirtAddr;
