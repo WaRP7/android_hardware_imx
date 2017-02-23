@@ -139,7 +139,7 @@ struct pcm_config pcm_config_esai_multi = {
 };
 
 struct pcm_config pcm_config_mm_in = {
-    .channels = 2,
+    .channels = 1,
     .rate = MM_FULL_POWER_SAMPLING_RATE,
     .period_size = CAPTURE_PERIOD_SIZE,
     .period_count = CAPTURE_PERIOD_COUNT,
