@@ -239,7 +239,7 @@ int FSLSensorsHub::readEvents(sensors_event_t* data, int count)
 
     while (count && mInputReader.readEvent(&event)) {
         int type = event->type;
-		ALOGE("%d fd read %d type data", data_fd, type);
+		//ALOGE("%d fd read %d type data", data_fd, type);
         if ((type == EV_ABS) || (type == EV_REL) || (type == EV_KEY)) {
             processEvent(type,event->code, event->value);
             mInputReader.next();
@@ -273,7 +273,7 @@ void FSLSensorsHub::processEvent(int code, int value)
 }
 void FSLSensorsHub::processEvent(int type ,int code, int value){
 	static uint64_t steps_high = 0,steps_low = 0;
-	ALOGE("processEvent type:%d code:%x value:%x", type, code, value);
+	//ALOGE("processEvent type:%d code:%x value:%x", type, code, value);
 
 	if(mSensorWhat = accel){
 		 switch (code) {
