@@ -451,12 +451,12 @@ static void YUY2ToRGB565(unsigned char *src, unsigned char *dst, int width, int 
             int V = Y1+3;
             int index = (Y1>>1)*2;
             RGB tmp = yuvTorgb(src[Y1], src[U], src[V]);
-            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
-            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.r >> 3) );
+            rgb[index+1] = ( (tmp.b & 0xF8) | ( tmp.g >> 5) );
             index += 2;
             tmp = yuvTorgb(src[Y2], src[U], src[V]);
-            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
-            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.r >> 3) );
+            rgb[index+1] = ( (tmp.b & 0xF8) | ( tmp.g >> 5) );
         }
     }
     return;
@@ -479,12 +479,12 @@ static void UYVYToRGB565(unsigned char *src, unsigned char *dst, int width, int 
             int index = (U>>1)*2;
 
             RGB tmp = yuvTorgb(src[Y1], src[U], src[V]);
-            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
-            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.r >> 3) );
+            rgb[index+1] = ( (tmp.b & 0xF8) | ( tmp.g >> 5) );
             index += 2;
             tmp = yuvTorgb(src[Y2], src[U], src[V]);
-            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.b >> 3) );
-            rgb[index+1] = ( (tmp.r & 0xF8) | ( tmp.g >> 5) );
+            rgb[index+0] = ( ((tmp.g & 0x1C) << 3) | ( tmp.r >> 3) );
+            rgb[index+1] = ( (tmp.b & 0xF8) | ( tmp.g >> 5) );
         }
     }
     return;
