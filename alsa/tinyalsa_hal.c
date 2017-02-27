@@ -97,6 +97,7 @@
 
 /*"null_card" must be in the end of this array*/
 struct audio_card *audio_card_list[SUPPORT_CARD_NUM] = {
+    &sgtl15000_card,
     &wm8958_card,
     &wm8962_card,
     &hdmi_card,
@@ -105,7 +106,6 @@ struct audio_card *audio_card_list[SUPPORT_CARD_NUM] = {
     &cs42888_card,
     &wm8960_card,
     &sii902x_card,
-    &sgtl15000_card,
     &null_card,
 };
 
@@ -139,7 +139,7 @@ struct pcm_config pcm_config_esai_multi = {
 };
 
 struct pcm_config pcm_config_mm_in = {
-    .channels = 1,
+    .channels = 2,
     .rate = MM_FULL_POWER_SAMPLING_RATE,
     .period_size = CAPTURE_PERIOD_SIZE,
     .period_count = CAPTURE_PERIOD_COUNT,
