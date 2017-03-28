@@ -16,7 +16,8 @@
  */
 
 #include "SurfaceAdapter.h"
-
+#define CONFIG_NATIVE_WINDOW_PIX_FORMAT HAL_PIXEL_FORMAT_RGB_888  //kernel:CONFIG_FB_MXC_TRULY_PANEL_TDO_QVGA0150A90049
+//#define CONFIG_NATIVE_WINDOW_PIX_FORMAT HAL_PIXEL_FORMAT_RGB_565 //kernel:CONFIG_FB_MXC_TRULY_PANEL_TDO_ST7796H
 
 typedef struct tRGB{
      unsigned char r;
@@ -552,7 +553,7 @@ int SurfaceAdapter::setNativeWindowAttribute(int width,
 
     // Set window geometry
     ALOGI("set_buffers_geometry, w %d, h %d, format 0x%x", width, height, format);
-    format = HAL_PIXEL_FORMAT_RGB_565;//az
+    format = CONFIG_NATIVE_WINDOW_PIX_FORMAT;//az
     ALOGI("az set NativeWindow HAL_PIXEL_FORMAT_RGB_565: set_buffers_geometry, w %d, h %d, format 0x%x", width, height, format);
     err = mNativeWindow->set_buffers_geometry(mNativeWindow,
                                               width, height, format);
@@ -875,7 +876,11 @@ void SurfaceAdapter::renderBuffer(buffer_handle_t *bufHandle)
     static int count = 0 ;
     if ((0x3&(count++))==0) {
         memcpy(mTmpBuf, (void *)handle->base, mBufferSize);
+        #if (CONFIG_NATIVE_WINDOW_PIX_FORMAT==HAL_PIXEL_FORMAT_RGB_888)
+        YUY2ToRGB(mTmpBuf, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
+        #elif (CONFIG_NATIVE_WINDOW_PIX_FORMAT==HAL_PIXEL_FORMAT_RGB_565)
         YUY2ToRGB565(mTmpBuf, (unsigned char *)handle->base, mFrameWidth, mFrameHeight);
+        #endif
         memcpy(mTmpBuf, (void *)handle->base, mBufferSize);
     }else {
         memcpy((void *)handle->base,mTmpBuf,  mBufferSize);
