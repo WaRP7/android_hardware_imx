@@ -27,6 +27,9 @@
 #include <cutils/log.h>
 #include <cutils/properties.h>
 #include "FSLSensorsHub.h"
+#include <unistd.h>
+
+extern android::Mutex mgLock;
 
 #define FSL_SENS_CTRL_NAME   	"FSL_SENS_HUB"
 #define FSL_SENS_DATA_NAME    	"FSL_SENS_HUB" 
@@ -82,11 +85,18 @@
 #define LA_DATA_CONVERSION(value)   ((float)value /10.0f)
 #define GRAVT_DATA_CONVERSION(value)((float)value /10.0f)
 
+#define MAG_DATA_CALIBRATION_X (-2839.4)
+#define MAG_DATA_CALIBRATION_Y (-895.21)
+#define MAG_DATA_CALIBRATION_Z (1180)
 
+//If reverse, mag and accel should reverse together
+#define DATA_REVERSE_X(x) (-(x))
+#define DATA_REVERSE_Y(y) (-(y))
+#define DATA_REVERSE_Z(z) (+(z))
 
 FSLSensorsHub::FSLSensorsHub( const char* dev_name,
         const char* data_name)
-: SensorBase(dev_name, dev_name),
+: SensorBase(dev_name, data_name),
   mPendingMask(0),
   mInputReader(16)
 {
@@ -146,7 +156,6 @@ int FSLSensorsHub::setEnable(int32_t handle, int en)
 	
 	if(mEnabled[what] < 0)
 		mEnabled[what] = 0;
-
 	for(int i = 0; i < sensors; i++ ){
 		if(mEnabled[i] > 0)
 		{
@@ -215,22 +224,61 @@ int FSLSensorsHub::update_delay(int sensor_type , int64_t ns)
 
 int FSLSensorsHub::readEvents(sensors_event_t* data, int count)
 {
+    //ALOGD("%s:%d", __func__, mSensorWhat);
 	int i;
     if (count < 1)
         return -EINVAL;
 
+    // if accel and mag are both working,
+    // switch from accel to mag, or mag to accel before report
+    // mutex mgLock to make sure the event is correct
+#if 1 //az 
+    // if this sensor disabled, do not read event
+    if (mEnabled[mSensorWhat]==0) {
+        //FIXME: this makes sensors.cpp poll always running
+        return 0;
+    }
+    ssize_t n=-1;
+    if (mSensorWhat == accel ||  mSensorWhat == mag) {
+        mgLock.lock();
+        int is_acc_enabled=0, is_mag_enabled=0;
+        int err=-1;
+        err = readEnable(accel, is_acc_enabled);
+        if (err) ALOGE("read accel enable error:%d", err);
+        err = readEnable(mag, is_mag_enabled);
+        if (err) ALOGE("read mag enable error:%d", err);
+
+        //only acc and mag are both working, make the switch
+        if ((mSensorWhat == mag&&is_acc_enabled==1) ||(mSensorWhat == accel && is_mag_enabled==1)) {
+            //ALOGD("make switch between accel and mag");
+            //flush it firstly
+            n = mInputReader.fill(data_fd);
+            disable_sensor(accel);
+            disable_sensor(mag);
+            if (n>0) {
+                input_event const* e;
+                while (mInputReader.readEvent(&e)) {
+                    mInputReader.next();
+                }
+            }
+
+            if (mSensorWhat == accel) {
+                enable_sensor(accel);
+                n = mInputReader.fill(data_fd);
+            } else if (mSensorWhat == mag) {
+                enable_sensor(mag);
+                n = mInputReader.fill(data_fd);
+            }
+        }else {
+            n = mInputReader.fill(data_fd);
+        }
+        mgLock.unlock();
+    }else {
+        n = mInputReader.fill(data_fd);
+    }
+#else
     ssize_t n = mInputReader.fill(data_fd);
-/*
-	if (mSensorWhat = accel) {
-		disable_sensor(mag);
-		enable_sensor(accel);
-		n = mInputReader.fill(data_fd);
-	} else if (mSensorWhat = mag) {
-		disable_sensor(accel);
-		enable_sensor(mag);
-		n = mInputReader.fill(data_fd);
-	}
-	*/
+#endif	
     if (n < 0)
         return n;
 
@@ -273,38 +321,40 @@ void FSLSensorsHub::processEvent(int code, int value)
 }
 void FSLSensorsHub::processEvent(int type ,int code, int value){
 	static uint64_t steps_high = 0,steps_low = 0;
-	//ALOGE("processEvent type:%d code:%x value:%x", type, code, value);
+	//ALOGD("processEvent type:%d code:%x value:%x", type, code, value);
 
-	if(mSensorWhat = accel){
+	if(mSensorWhat == accel){
+        //ALOGD("processEvent accel type:%d code:%x value:%x processed_value:%d", type, code, value, (int)ACC_DATA_CONVERSION(value));
 		 switch (code) {
 		 case EVENT_ORNT_X:
             mPendingMask |= 1 << accel;
-            mPendingEvent[accel].acceleration.x = ACC_DATA_CONVERSION(value);
+            mPendingEvent[accel].acceleration.x = ACC_DATA_CONVERSION(DATA_REVERSE_X(value));
             break;
         case EVENT_ORNT_Y:
             mPendingMask |= 1 << accel;
-            mPendingEvent[accel].acceleration.y = ACC_DATA_CONVERSION(value);
+            mPendingEvent[accel].acceleration.y = ACC_DATA_CONVERSION(DATA_REVERSE_Y(value));
             break;
         case EVENT_ORNT_Z:
             mPendingMask |=  1 << accel;
-            mPendingEvent[accel].acceleration.z = ACC_DATA_CONVERSION(value);
+            mPendingEvent[accel].acceleration.z = ACC_DATA_CONVERSION(DATA_REVERSE_Z(value));
             break;
 		 }
 	}
 		 
-	if(mSensorWhat = mag){
+	if(mSensorWhat == mag){
+        //ALOGD("processEvent mag type:%d code:%x value:%x processed_value:%d", type, code, value, (int)MAG_DATA_CONVERSION(value));
 		switch (code) {
         case EVENT_ORNT_X :
             mPendingMask |= 1 << mag;
-            mPendingEvent[mag].magnetic.x = MAG_DATA_CONVERSION(value);
+            mPendingEvent[mag].magnetic.x = MAG_DATA_CONVERSION(DATA_REVERSE_X(value+MAG_DATA_CALIBRATION_X));
             break;
         case EVENT_ORNT_Y:
             mPendingMask |= 1 << mag;
-            mPendingEvent[mag].magnetic.y = MAG_DATA_CONVERSION(value);
+            mPendingEvent[mag].magnetic.y = MAG_DATA_CONVERSION(DATA_REVERSE_Y(value+MAG_DATA_CALIBRATION_Y));
             break;
         case EVENT_ORNT_Z:
             mPendingMask |=  1 << mag;
-            mPendingEvent[mag].magnetic.z = MAG_DATA_CONVERSION(value);
+            mPendingEvent[mag].magnetic.z = MAG_DATA_CONVERSION(DATA_REVERSE_Z(value+MAG_DATA_CALIBRATION_Z));
             break;
 		case EVENT_MAG_STATUS:
 			mPendingMask |=  1 << mag;
@@ -315,7 +365,8 @@ void FSLSensorsHub::processEvent(int type ,int code, int value){
 
 	}
 
-	if(mSensorWhat = gyro){
+	if(mSensorWhat == gyro){
+        //ALOGD("processEvent gyro type:%d code:%x value:%x processed_value:%d", type, code, value, (int)GYRO_DATA_CONVERSION(value));
 		switch (code) {
 		case EVENT_ORNT_X :
             mPendingMask |=  1 << gyro;
@@ -365,7 +416,37 @@ int FSLSensorsHub::writeEnable(int what ,int isEnable) {
 
 	return err;
 }
+int FSLSensorsHub::readEnable(int what ,int &isEnabled) {
+	char attr[PATH_MAX] = {'\0'};
+	int err = 0;
+	if(mClassPath[0] == '\0')
+		return -1;
 
+	strcpy(attr, mClassPath[what]);
+	strcat(attr,"/");
+	strcat(attr,FSL_SENS_SYSFS_ENABLE);
+
+	int fd = open(attr, O_RDONLY);
+	if (0 > fd) {
+		ALOGE("Could not open (write-only) SysFs attribute \"%s\" (%s).", attr, strerror(errno));
+		return -errno;
+	}
+
+	char buf[2];
+	err = read(fd, buf, sizeof(buf));
+	if (0 > err) {
+		err = -errno;
+		ALOGE("Could not write SysFs attribute \"%s\" (%s).", attr, strerror(errno));
+	} else {
+		err = 0;
+	}
+    isEnabled = atoi(buf);
+    //ALOGD("%s:%s read from %s:%d", __func__, mClassPath[mSensorWhat], attr, isEnabled);
+    
+	close(fd);
+
+	return err;
+}
 int FSLSensorsHub::writeDelay(int what,int64_t ns) {
 	char attr[PATH_MAX] = {'\0'};
 	int delay;

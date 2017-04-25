@@ -35,7 +35,6 @@
 #include "PressSensor.h"
 
 #include "FSLSensorsHub.h"
-
 /*****************************************************************************/
 
 #define DELAY_OUT_TIME 0x7FFFFFFF
@@ -58,6 +57,10 @@
 
 
 /*****************************************************************************/
+
+//this lock is for 2-in-one sensor chip to make sure the event report correctly
+//in our case, fos8700 is for mag and accel
+android::Mutex mgLock;
 
 /* The SENSORS Module */
 static const struct sensor_t sSensorList[] = {
@@ -85,7 +88,6 @@ static const struct sensor_t sSensorList[] = {
           1, SENSORS_TEMPERATURE_HANDLE,
           SENSOR_TYPE_TEMPERATURE, 110.0f, 1.5, 0.50f, 10000, 0, 0, "" },
 };
-
 
 static int open_sensors(const struct hw_module_t* module, const char* id,
                         struct hw_device_t** device);
@@ -163,6 +165,7 @@ private:
         }
         return -EINVAL;
     }
+
 };
 
 /*****************************************************************************/
@@ -228,6 +231,10 @@ int sensors_poll_context_t::pollEvents(sensors_event_t* data, int count)
 {
     int nbEvents = 0;
     int n = 0;
+    //ALOGD("%s: count=%d", __func__, count);
+    //incase count is too large, and have to wait too long
+    if (count > 8) count=8;
+
     do {
         // see if we have some leftover from the last poll()
         for (int i=0 ; count && i<numSensorDrivers ; i++) {
@@ -251,7 +258,7 @@ int sensors_poll_context_t::pollEvents(sensors_event_t* data, int count)
             // anything to return
             //n = poll(mPollFds, numFds, nbEvents ? 0 : -1);
 			do {
-				//fillPollFd(); /*reset poll fd , if sensor change between batch mode and continuous mode*/
+				fillPollFd(); /*reset poll fd , if sensor change between batch mode and continuous mode*/
 			 	n = poll(mPollFds, numFds, nbEvents ? 0 : -1);            
 			} while (n < 0 && errno == EINTR);
             if (n<0) {
@@ -266,6 +273,7 @@ int sensors_poll_context_t::pollEvents(sensors_event_t* data, int count)
                 mPollFds[wake].revents = 0;
             }
         }
+        usleep(10*1000);
         // if we have events and space, go read them
     } while (n && count);
 

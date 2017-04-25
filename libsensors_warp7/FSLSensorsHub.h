@@ -22,14 +22,15 @@
 #include <errno.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
-
+#include <pthread.h>
+#include <utils/Mutex.h>
+#include <utils/threads.h>
 
 #include "sensors.h"
 #include "SensorBase.h"
 #include "InputEventReader.h"
 
 /*****************************************************************************/
-
 class FSLSensorsHub : public SensorBase {
 public:
     FSLSensorsHub( const char* dev_name,
@@ -61,6 +62,7 @@ private:
 	int update_delay(int sensor_type,int64_t ns);
 	int readDisable();
 	int writeEnable(int what,int isEnable);
+	int readEnable(int what,int &isEnabled);
 	int writeDelay(int what,int64_t ns);
 	int mEnabled[sensors];
 	int mPendingMask;
