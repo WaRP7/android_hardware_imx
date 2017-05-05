@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 extern android::Mutex mgLock;
+extern MagCalibration gMagCalibration;
 
 #define FSL_SENS_CTRL_NAME   	"FSL_SENS_HUB"
 #define FSL_SENS_DATA_NAME    	"FSL_SENS_HUB" 
@@ -84,7 +85,7 @@ extern android::Mutex mgLock;
 #define RV_DATA_CONVERSION(value)   ((float)value /10000.0f)
 #define LA_DATA_CONVERSION(value)   ((float)value /10.0f)
 #define GRAVT_DATA_CONVERSION(value)((float)value /10.0f)
-
+//2891,865,-1451
 #define MAG_DATA_CALIBRATION_X (-2839.4)
 #define MAG_DATA_CALIBRATION_Y (-895.21)
 #define MAG_DATA_CALIBRATION_Z (1180)
@@ -323,20 +324,32 @@ void FSLSensorsHub::processEvent(int type ,int code, int value){
 	static uint64_t steps_high = 0,steps_low = 0;
 	//ALOGD("processEvent type:%d code:%x value:%x", type, code, value);
 
+    static int x,y,z;
+    static int cx=-MAG_DATA_CALIBRATION_X,cy=-MAG_DATA_CALIBRATION_Y,cz=-MAG_DATA_CALIBRATION_Z;
+    int64_t t;
+    int ret=-1;
 	if(mSensorWhat == accel){
-        //ALOGD("processEvent accel type:%d code:%x value:%x processed_value:%d", type, code, value, (int)ACC_DATA_CONVERSION(value));
+         //ALOGD("processEvent accel type:%d code:%x value:%x processed_value:%d", type, code, value, (int)ACC_DATA_CONVERSION(value));
 		 switch (code) {
 		 case EVENT_ORNT_X:
             mPendingMask |= 1 << accel;
             mPendingEvent[accel].acceleration.x = ACC_DATA_CONVERSION(DATA_REVERSE_X(value));
+            x=mPendingEvent[accel].acceleration.x*10;
             break;
         case EVENT_ORNT_Y:
             mPendingMask |= 1 << accel;
             mPendingEvent[accel].acceleration.y = ACC_DATA_CONVERSION(DATA_REVERSE_Y(value));
+            y=mPendingEvent[accel].acceleration.y*10;
             break;
         case EVENT_ORNT_Z:
             mPendingMask |=  1 << accel;
             mPendingEvent[accel].acceleration.z = ACC_DATA_CONVERSION(DATA_REVERSE_Z(value));
+
+            z=mPendingEvent[accel].acceleration.z*10;
+            t=0;//t=getTimestamp()/1000; //ms//FIXME: cannot get a right time-stamp
+            if (gMagCalibration.getLength()<gMagCalibration.getSize()) {
+                gMagCalibration.insertAccData(x,y,z,t);
+            }
             break;
 		 }
 	}
@@ -346,15 +359,28 @@ void FSLSensorsHub::processEvent(int type ,int code, int value){
 		switch (code) {
         case EVENT_ORNT_X :
             mPendingMask |= 1 << mag;
-            mPendingEvent[mag].magnetic.x = MAG_DATA_CONVERSION(DATA_REVERSE_X(value+MAG_DATA_CALIBRATION_X));
+            mPendingEvent[mag].magnetic.x = MAG_DATA_CONVERSION(DATA_REVERSE_X(value-cx));
+            x=value;
             break;
         case EVENT_ORNT_Y:
             mPendingMask |= 1 << mag;
-            mPendingEvent[mag].magnetic.y = MAG_DATA_CONVERSION(DATA_REVERSE_Y(value+MAG_DATA_CALIBRATION_Y));
+            mPendingEvent[mag].magnetic.y = MAG_DATA_CONVERSION(DATA_REVERSE_Y(value-cy));
+            y=value;
             break;
         case EVENT_ORNT_Z:
             mPendingMask |=  1 << mag;
-            mPendingEvent[mag].magnetic.z = MAG_DATA_CONVERSION(DATA_REVERSE_Z(value+MAG_DATA_CALIBRATION_Z));
+            mPendingEvent[mag].magnetic.z = MAG_DATA_CONVERSION(DATA_REVERSE_Z(value-cz));
+            z=value;
+            t=100;//t=getTimestamp()/1000; //ms//FIXME: cannot get a right time-stamp
+            if (gMagCalibration.getLength()<gMagCalibration.getSize()) {
+                ret = gMagCalibration.insertMagData(x,y,z,/*t*/100);
+                if (ret==0) {//insert ok
+                    if (gMagCalibration.getLength()>gMagCalibration.getSize()/2) {
+                        gMagCalibration.updateCenter(); //FIXME: not always update
+                        gMagCalibration.getCenter(cx,cy,cz);
+                    }
+                }
+            }
             break;
 		case EVENT_MAG_STATUS:
 			mPendingMask |=  1 << mag;

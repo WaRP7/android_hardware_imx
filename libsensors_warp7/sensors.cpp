@@ -61,6 +61,7 @@
 //this lock is for 2-in-one sensor chip to make sure the event report correctly
 //in our case, fos8700 is for mag and accel
 android::Mutex mgLock;
+MagCalibration gMagCalibration;
 
 /* The SENSORS Module */
 static const struct sensor_t sSensorList[] = {

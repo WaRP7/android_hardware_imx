@@ -27,6 +27,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_SRC_FILES := 						\
 				sensors.cpp 			\
 				SensorBase.cpp			\
+				MagCalibration.cpp		\
 				FSLSensorsHub.cpp		\
 				PressSensor.cpp			\
 				InputEventReader.cpp            

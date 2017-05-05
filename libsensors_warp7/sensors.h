@@ -27,6 +27,7 @@
 
 #include <hardware/hardware.h>
 #include <hardware/sensors.h>
+#include "MagCalibration.h"
 
 __BEGIN_DECLS
 
