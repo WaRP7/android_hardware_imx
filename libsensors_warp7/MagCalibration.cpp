@@ -1,5 +1,6 @@
 #include "MagCalibration.h"
 #include <stdlib.h>
+#include <cutils/properties.h>
 #define ACC_Z_THRESHOLD (5)
 #define ACC_Z_NORMAL (98)
 
@@ -56,9 +57,13 @@ int MagCalibration::insertMagData(int x, int y, int z, int64_t t)
             {
                 mag_accel_len++;
                 memcpy(&(mag_accel_pairs[cur]),&mag_accel_data_tmp, sizeof(mag_accel_data_tmp));
-                ALOGD("%s:accel:x=%d,y=%d,z=%d,t=%ld", __func__,mag_accel_data_tmp.acc_x,mag_accel_data_tmp.acc_y,mag_accel_data_tmp.acc_z,mag_accel_data_tmp.acc_t);
-                ALOGD("%s:mag:  x=%d,y=%d,z=%d,t=%ld", __func__,x,y,z,t);
+                //ALOGD("%s:accel:x=%d,y=%d,z=%d,t=%ld", __func__,mag_accel_data_tmp.acc_x,mag_accel_data_tmp.acc_y,mag_accel_data_tmp.acc_z,mag_accel_data_tmp.acc_t);
+                //ALOGD("%s:mag:  x=%d,y=%d,z=%d,t=%ld", __func__,x,y,z,t);
                 ALOGD("***** INSERTED at %d", cur);
+                ALOGD("Magnetic Sensor Calibration complete: %d", 100*(cur+1)/getSize());
+                char buf[10];
+                sprintf(buf,"%d", 100*(cur+1)/getSize());
+                property_set("sys.sensors.magcalibration",buf); //percent of completion 
                 return 0;
             }
     }
